@@ -1,5 +1,5 @@
 const Notification = require("../sockets/notification");
-const ComplaintService = require("../services/Complaint.service.js");
+const ComplaintService = require("../services/complaint.service.js");
 
 const createComplaint = async (req, res) => {
   try {
