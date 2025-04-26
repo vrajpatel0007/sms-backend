@@ -62,8 +62,9 @@ const createResident = async (req, res) => {
         // console.log("🚀 ~ createResident ~ Society.findById:",await Society.findOne({_id:req.user.societyid}))
         const Soci = await SocietyModel.findByIdAndUpdate(req.user.societyid,{
             $inc:{unit:1},
-            $push:{resident:newResident._id}
+            $push:{residents:newResident._id}
         })
+        console.log("🚀 ~ createResident ~ Soci:", Soci)
         // console.log("🚀 ~ createResident ~ Soci:", Soci)
         const societyId = req.user.societyid
         console.log("🚀 ~ createResident ~ req.user.societyid:", req.user.societyid);
