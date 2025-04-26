@@ -64,24 +64,16 @@ const createResident = async (req, res) => {
             $inc:{unit:1},
             $push:{residents:newResident._id}
         })
-        console.log("🚀 ~ createResident ~ Soci:", Soci)
         // console.log("🚀 ~ createResident ~ Soci:", Soci)
         const societyId = req.user.societyid
-        console.log("🚀 ~ createResident ~ req.user.societyid:", req.user.societyid);
-        console.log("🚀 ~ Validated Society ID:", societyId);
 
         const society = await Society.byid(societyId);
-        console.log("🚀 ~ Society.findById result:", society);
 
         if (!society) {
             return res.status(404).json({ error: "Society not found" });
         }
         const residentid = newResident._id;
-        console.log("🚀 ~ createResident ~ newResident._id:", residentid)
         const updatedSociety = await Society.updateunit(societyId, residentid);
-        console.log("🚀 ~ createResident ~ residentid:", residentid)
-
-        console.log("🚀 ~ Updated Society:", updatedSociety);
 
         if (!updatedSociety) {
             return res.status(500).json({ error: "Failed to update society" });

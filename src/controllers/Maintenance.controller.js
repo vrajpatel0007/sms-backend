@@ -229,6 +229,42 @@ const getMaintenanceStatus = async (req, res) => {
   }
 };
 
+const getPendingMaintenances = async (req, res) => {
+  try {
+    const societyId = req.user.societyid;
+
+    // 1. Society na badha residents lavva
+    const allResidents = await Resident.find({
+      Society: societyId
+    }).select('_id Fullname Email Phone');
+
+    // 2. Je residents payment kari chuka che e lavva
+    const paidResidentIds = await Payment.distinct('residentid', {
+      societyid: societyId,
+      paymenttype: "Maintenance",
+      haspaid: true
+    });
+
+    // 3. Pending residents (je payment karyu nathi)
+    const pendingResidents = allResidents.filter(resident => 
+      !paidResidentIds.includes(resident._id.toString())
+    );
+
+    res.status(200).json({
+      success: true,
+      totalPendingResidents: pendingResidents.length,
+      pendingResidents: pendingResidents.map(r => ({
+        residentId: r._id,
+        fullname: r.Fullname,
+        email: r.Email,
+        phone: r.Phone,
+      }))
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Server Error", error: error.message });
+  }
+};
 
 module.exports = {
   createMaintenance,
@@ -237,4 +273,5 @@ module.exports = {
   deleteMaintenance,
   getMaintenance,
   getMaintenanceStatus,
+  getPendingMaintenances
 };
