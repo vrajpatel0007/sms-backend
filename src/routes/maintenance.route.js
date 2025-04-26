@@ -9,6 +9,6 @@ router.get("/getMaintenance/:id", authUser, MaintenanceController.getMaintenance
 router.put("/updateMaintenance/:id", authUser, MaintenanceController.updateMaintenance);
 router.delete("/deleteMaintenance/:id", authUser, MaintenanceController.deleteMaintenance);
 router.get("/getMaintenanceStatus", authUser, MaintenanceController.getMaintenanceStatus);
-
+router.get('/pending-maintenance', authUser, MaintenanceController.getPendingMaintenances);
 
 module.exports = router;
