@@ -89,6 +89,19 @@ const update = async (req, res) => {
     }
 };
 
+const getProfile = async (req, res) => {
+    try {
+        const id = req.user._id;
+        const security = await securityService.findById(id);
+        if (!security) {
+            return res.status(404).json({ message: "Security personnel not found" });
+        }
+        res.status(200).json(security);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // Get a security personnel's details
 const getSecurity = async (req, res) => {
     try {
@@ -257,4 +270,5 @@ module.exports = {
     getSecurityProtocol,
     updateSecurityProtocol,
     deleteSecurityProtocol,
+    getProfile
 };

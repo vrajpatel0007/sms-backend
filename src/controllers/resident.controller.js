@@ -1,5 +1,6 @@
 const resident_service = require("../services/resident.service")
 const Society = require("../services/society.service")
+const SocietyModel = require("../models/society.model")
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { uploadFile } = require("../middleware/upload")
@@ -59,10 +60,10 @@ const createResident = async (req, res) => {
         // console.log("🚀 ~ createResident ~ newResident.societyid:", newResident.Society)
 
         // console.log("🚀 ~ createResident ~ Society.findById:",await Society.findOne({_id:req.user.societyid}))
-        // const Soci = await Society.findByIdAndUpdate(req.user.societyid,{
-        //     $inc:{unit:1},
-        //     $push:{resident:newResident._id}
-        // })
+        const Soci = await SocietyModel.findByIdAndUpdate(req.user.societyid,{
+            $inc:{unit:1},
+            $push:{resident:newResident._id}
+        })
         // console.log("🚀 ~ createResident ~ Soci:", Soci)
         const societyId = req.user.societyid
         console.log("🚀 ~ createResident ~ req.user.societyid:", req.user.societyid);
