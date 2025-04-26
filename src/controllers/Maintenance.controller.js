@@ -233,31 +233,34 @@ const getPendingMaintenances = async (req, res) => {
   try {
     const societyId = req.user.societyid;
 
-    // 1. Society na badha residents lavva
+    // 1. Badha society na residents lavva
     const allResidents = await Resident.find({
       Society: societyId
-    }).select('_id Fullname Email Phone');
+    }).select('_id Fullname Email Phone Unit Wing residentphoto');
 
-    // 2. Je residents payment kari chuka che e lavva
+    // 2. Je residents maintenance pay kari chuka che enu ID lavva
     const paidResidentIds = await Payment.distinct('residentid', {
       societyid: societyId,
       paymenttype: "Maintenance",
       haspaid: true
     });
 
-    // 3. Pending residents (je payment karyu nathi)
-    const pendingResidents = allResidents.filter(resident => 
+    // 3. Je payment nathi karyu eva residents filter karva
+    const pendingResidents = allResidents.filter(resident =>
       !paidResidentIds.includes(resident._id.toString())
     );
 
     res.status(200).json({
       success: true,
-      totalPendingResidents: pendingResidents.length,
-      pendingResidents: pendingResidents.map(r => ({
+      totalPendingMembers: pendingResidents.length,
+      pendingMembers: pendingResidents.map(r => ({
         residentId: r._id,
         fullname: r.Fullname,
-        email: r.Email,
         phone: r.Phone,
+        email: r.Email,
+        wing: r.Wing,
+        unit: r.Unit,
+        residentphoto: r.residentphoto // 👈 profile image URL or filename
       }))
     });
   } catch (error) {
