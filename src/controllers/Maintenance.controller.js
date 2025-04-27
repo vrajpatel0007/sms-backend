@@ -229,26 +229,41 @@ const getMaintenanceStatus = async (req, res) => {
   }
 };
 
+
 const getPendingMaintenances = async (req, res) => {
   try {
     const societyId = req.user.societyid;
 
-    // 1. Badha society na residents lavva
+    // 1. Fetch all society residents
     const allResidents = await Resident.find({
       Society: societyId
     }).select('_id Fullname Email Phone Unit Wing residentphoto');
 
-    // 2. Je residents maintenance pay kari chuka che enu ID lavva
-    const paidResidentIds = await Payment.distinct('residentid', {
+    console.log('All Residents:', allResidents); // Debugging line to check resident data
+
+    // 2. Get the residents who have made a payment for maintenance (whether paid or not)
+    const paymentRecords = await Payment.find({
       societyid: societyId,
       paymenttype: "Maintenance",
-      haspaid: true
+    }).select('residentid haspaid');
+
+
+    // 3. Build a map to track payment status for each resident
+    const paymentStatusMap = new Map();
+    paymentRecords.forEach(record => {
+      // Add residents who have made a payment and track their `haspaid` status
+      paymentStatusMap.set(record.residentid.toString(), record.haspaid);
     });
 
-    // 3. Je payment nathi karyu eva residents filter karva
-    const pendingResidents = allResidents.filter(resident =>
-      !paidResidentIds.includes(resident._id.toString())
-    );
+    // 4. Now filter out residents who have not paid or have a `haspaid: false` status
+    const pendingResidents = allResidents.filter(resident => {
+      // Check if the resident has made a payment
+      const hasPaid = paymentStatusMap.get(resident._id.toString());
+      
+      // If no payment record or `haspaid: false`, they should be considered pending
+      return hasPaid === false || hasPaid === undefined;
+    });
+
 
     res.status(200).json({
       success: true,
@@ -260,7 +275,7 @@ const getPendingMaintenances = async (req, res) => {
         email: r.Email,
         wing: r.Wing,
         unit: r.Unit,
-        residentphoto: r.residentphoto // 👈 profile image URL or filename
+        residentphoto: r.residentphoto
       }))
     });
   } catch (error) {
@@ -268,6 +283,9 @@ const getPendingMaintenances = async (req, res) => {
     res.status(500).json({ success: false, message: "Server Error", error: error.message });
   }
 };
+
+
+
 
 module.exports = {
   createMaintenance,
