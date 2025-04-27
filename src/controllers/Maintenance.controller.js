@@ -234,55 +234,98 @@ const getPendingMaintenances = async (req, res) => {
   try {
     const societyId = req.user.societyid;
 
-    // 1. Fetch all society residents
+    // 1. Fetch all residents
     const allResidents = await Resident.find({
       Society: societyId
     }).select('_id Fullname Email Phone Unit Wing residentphoto');
 
-    console.log('All Residents:', allResidents); // Debugging line to check resident data
+    // 2. Fetch all maintenance records
+    const maintenanceRecords = await Maintenance.find({
+      Society: societyId
+    }).select('Maintenance_Amount _id');
 
-    // 2. Get the residents who have made a payment for maintenance (whether paid or not)
+    // 3. Fetch all payment records for maintenance
     const paymentRecords = await Payment.find({
       societyid: societyId,
       paymenttype: "Maintenance",
-    }).select('residentid haspaid');
+    }).select('residentid maintenanceid haspaid');
 
-
-    // 3. Build a map to track payment status for each resident
-    const paymentStatusMap = new Map();
+    // 4. Build a map of payments for each resident
+    const paymentMap = new Map();
     paymentRecords.forEach(record => {
-      // Add residents who have made a payment and track their `haspaid` status
-      paymentStatusMap.set(record.residentid.toString(), record.haspaid);
+      if (record.residentid && record.maintenanceid) {
+        const residentId = record.residentid.toString();
+        const maintenanceId = record.maintenanceid.toString();
+        
+        if (!paymentMap.has(residentId)) {
+          paymentMap.set(residentId, []);
+        }
+        paymentMap.get(residentId).push({ maintenanceId, hasPaid: record.haspaid });
+      }
     });
 
-    // 4. Now filter out residents who have not paid or have a `haspaid: false` status
-    const pendingResidents = allResidents.filter(resident => {
-      // Check if the resident has made a payment
-      const hasPaid = paymentStatusMap.get(resident._id.toString());
-      
-      // If no payment record or `haspaid: false`, they should be considered pending
-      return hasPaid === false || hasPaid === undefined;
-    });
+    // 5. Final logic for calculating pending maintenance and amounts
+    const pendingResidents = [];
 
+    for (const resident of allResidents) {
+      const residentId = resident._id ? resident._id.toString() : null;
+      if (!residentId) continue; // Skip if resident ID is missing
+
+      let pendingMaintenances = 0;
+      let totalPendingAmount = 0;
+
+      // 6. Check each maintenance record for payments
+      maintenanceRecords.forEach(maintenance => {
+        const maintenanceId = maintenance._id.toString();
+        const maintenanceAmount = maintenance.Maintenance_Amount;
+
+        // If there's no payment record for this resident or the payment is not marked as paid
+        const payment = paymentMap.get(residentId)?.find(p => p.maintenanceId === maintenanceId);
+
+        if (!payment || payment.hasPaid === false) {
+          pendingMaintenances++;
+          totalPendingAmount += maintenanceAmount;
+        }
+      });
+
+      // If there are pending maintenance, add the resident to the pending list
+      if (pendingMaintenances > 0) {
+        pendingResidents.push({
+          residentId: resident._id,
+          fullname: resident.Fullname,
+          phone: resident.Phone,
+          email: resident.Email,
+          wing: resident.Wing,
+          unit: resident.Unit,
+          residentphoto: resident.residentphoto,
+          pendingMaintenances,
+          pendingAmount: totalPendingAmount,  // Total amount for pending maintenance
+        });
+      }
+    }
 
     res.status(200).json({
       success: true,
       totalPendingMembers: pendingResidents.length,
-      pendingMembers: pendingResidents.map(r => ({
-        residentId: r._id,
-        fullname: r.Fullname,
-        phone: r.Phone,
-        email: r.Email,
-        wing: r.Wing,
-        unit: r.Unit,
-        residentphoto: r.residentphoto
-      }))
+      pendingMembers: pendingResidents
     });
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: "Server Error", error: error.message });
   }
 };
+
+
+
+
+
+
+
+
+
+
+
 
 
 
