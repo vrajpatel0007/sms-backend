@@ -128,7 +128,7 @@ const verifyPayment = async (req, res) => {
       haspaid: true,
       paymentdate: new Date(),
     });
-    return res.redirect(`http://localhost:5173/payment-success?refresh=${razorpay_payment_id}`)
+    return res.redirect(`https://sms-frontend-plum.vercel.app/payment-success?refresh=${razorpay_payment_id}`)
     res
       .status(200)
       .json({ success: true, message: "Payment verified successfully" });

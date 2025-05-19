@@ -282,6 +282,7 @@ const getPendingMaintenances = async (req, res) => {
         // If there's no payment record for this resident or the payment is not marked as paid
         const payment = paymentMap.get(residentId)?.find(p => p.maintenanceId === maintenanceId);
 
+        // Check if the payment is not marked as paid (hasPaid === false or undefined)
         if (!payment || payment.hasPaid === false) {
           pendingMaintenances++;
           totalPendingAmount += maintenanceAmount;
@@ -315,18 +316,6 @@ const getPendingMaintenances = async (req, res) => {
     res.status(500).json({ success: false, message: "Server Error", error: error.message });
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
